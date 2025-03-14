@@ -1,0 +1,40 @@
+diskpart
+list disk
+select disk 0
+list part
+select part 1
+assign letter=a
+select part 4
+assign letter=q
+list volume
+
+select disk 1
+online disk
+attributes disk clear readonly
+convert gpt
+list part
+select part 1
+delete part override
+create part efi size=100
+format quick fs=fat32 label="System"
+assign letter=b
+create part msr size=16
+
+create partition primary 
+shrink minimum=600
+create partition primary
+format quick fs=ntfs label="Recovery"
+assign letter=r
+set id="de94bba4-06d1-4d40-a16a-bfd50179d6ac"
+gpt attributes=0x8000000000000001
+Robocopy.exe q:\ r:\ /e /r:0
+
+cd A:\EFI\Microsoft\Boot
+bcdedit /enum all
+bcdedit /copy {bootmgr} /d "Windows Boot Manager Cloned"
+bcdedit /set { GUID } device partition=b:
+bcdedit /enum all
+bcdedit /export a:\EFI\Microsoft\Boot\BCD2
+robocopy a:\ b:\ /e /r:0
+rename-item b:\EFI\Microsoft\Boot\BCD2 BCD
+remove-item a:\EFI\Microsoft\Boot\BCD2
